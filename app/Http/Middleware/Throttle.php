@@ -48,7 +48,7 @@ class Throttle
      * @param  float|int  $decayMinutes
      * @return mixed
      */
-    public function handle($request, Closure $next, $maxAttempts = 20, $decayMinutes = 1)
+    public function handle($request, Closure $next, $maxAttempts = 300, $decayMinutes = 1)
     {
         $key = $this->resolveRequestSignature($request);
         
