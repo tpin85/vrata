@@ -9,6 +9,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Throttle
 {
+    public function getIp(){
+        foreach (array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key){
+            if (array_key_exists($key, $_SERVER) === true){
+                foreach (explode(',', $_SERVER[$key]) as $ip){
+                    $ip = trim($ip); // just to be safe
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false){
+                        return $ip;
+                    }
+                }
+            }
+        }
+    }
     /**
      * The rate limiter instance.
      *
@@ -39,10 +51,10 @@ class Throttle
     public function handle($request, Closure $next, $maxAttempts = 20, $decayMinutes = 1)
     {
         $key = $this->resolveRequestSignature($request);
-
-        if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
-            return $this->buildResponse($key, $maxAttempts);
-        }
+        
+        // if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
+        //     return $this->buildResponse($key, $maxAttempts);
+        // }
 
         $this->limiter->hit($key, $decayMinutes);
 
@@ -62,6 +74,14 @@ class Throttle
      */
     protected function resolveRequestSignature($request)
     {
+        var_dump($request->ip());
+        var_dump($_SERVER);
+        dd($request->header());
+        
+        dd ( $request->method() .
+        '|' . $request->server('SERVER_NAME') .
+        '|' . $request->path() .
+        '|' . $request->ips());
         return sha1(
             $request->method() .
             '|' . $request->server('SERVER_NAME') .
