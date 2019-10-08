@@ -128,7 +128,7 @@ class RestClient
     public function setAggregateOriginBody($body)
     {
         foreach (json_decode($body) as $key => $value) {
-            $output['origin%' . $key] = $value;
+            $output['origin%' . $key] = $value;    
          }
 
         return $output;
@@ -211,15 +211,18 @@ class RestClient
             // Get body parameters for the current request
             $bodyAsync = $action->getBodyAsync();
 
+
             if (!is_null($bodyAsync)) {
+    
                 $this->setBody(json_encode($this->injectBodyParams($bodyAsync, $parametersJar)));
             }
             
+
             $carry[$action->getAlias()] = $this->client->{$method . 'Async'}($url, $this->guzzleParams);
             
             return $carry;
         }, []);
-
+        
         return $this->processResponses(
             $wrapper,
             collect(Promise\settle($promises)->wait())
@@ -308,17 +311,37 @@ class RestClient
      */
     private function injectBodyParams(array $body, array $params, $prefix = '')
     {
+
+
         foreach ($params as $key => $value) {
+
             foreach ($body as $bodyParam => $bodyValue) {
+
+            
                 if (is_string($value) || is_numeric($value)) {
-                    $body[$bodyParam] = str_replace("{" . $prefix . $key . "}", $value, $bodyValue);
+                    if (is_array($body[$bodyParam])) {
+                        foreach ($body[$bodyParam] as $key1 => $item1) {
+                            if (is_array($item1)) {
+                                foreach ($item1 as $key2 => $item2) {
+                                    $body[$bodyParam][$key1][$key2] = str_replace("{" . $prefix . $key . "}", $value, $item2);
+                                }
+                            } else {
+                                $body[$bodyParam][$key1] = str_replace("{" . $prefix . $key . "}", $value, $item1);
+                            } 
+                        }
+                    } else {
+                        $body[$bodyParam] = str_replace("{" . $prefix . $key . "}", $value, $bodyValue);
+                    }
+
                 } else if (is_array($value)) {
+
                     if ($bodyValue == "{" . $prefix . $key . "}") {
                         $body[$bodyParam] = $value;
                     }
                 }
             }
         }
+
         return $body;
     }    
 

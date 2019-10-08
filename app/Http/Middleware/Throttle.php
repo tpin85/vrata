@@ -48,13 +48,13 @@ class Throttle
      * @param  float|int  $decayMinutes
      * @return mixed
      */
-    public function handle($request, Closure $next, $maxAttempts = 300, $decayMinutes = 1)
+    public function handle($request, Closure $next, $maxAttempts = 100, $decayMinutes = 1)
     {
         $key = $this->resolveRequestSignature($request);
         
-        // if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
-        //     return $this->buildResponse($key, $maxAttempts);
-        // }
+        if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
+            return $this->buildResponse($key, $maxAttempts);
+        }
 
         $this->limiter->hit($key, $decayMinutes);
 
@@ -74,14 +74,14 @@ class Throttle
      */
     protected function resolveRequestSignature($request)
     {
-        var_dump($request->ip());
-        var_dump($_SERVER);
-        dd($request->header());
+        // var_dump($request->ip());
+        // var_dump($_SERVER);
+        // dd($request->header());
         
-        dd ( $request->method() .
-        '|' . $request->server('SERVER_NAME') .
-        '|' . $request->path() .
-        '|' . $request->ips());
+        // dd ( $request->method() .
+        // '|' . $request->server('SERVER_NAME') .
+        // '|' . $request->path() .
+        // '|' . $request->ips());
         return sha1(
             $request->method() .
             '|' . $request->server('SERVER_NAME') .
